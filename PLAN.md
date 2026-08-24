@@ -17,7 +17,7 @@ Keine Messung nötig, das ist eine Präferenz:
 |---|---|---|
 | Anzeige | dauerhaft im Ruhezustand | auf Zuruf |
 | Sprachbefehl | keiner (unnötig) | „Hey Google, Essensplan" |
-| Infrastruktur | wöchentlicher Cron | **Always-on-Gerät im LAN** (Pi/NAS/HA) |
+| Infrastruktur | wöchentlicher Cloud-Cron | **Always-on-Gerät im LAN** (Pi/NAS/HA) |
 | Interaktion | keine, statisches Bild | möglich |
 | Risiko | gering | Cast auf 2. Gen ist fragil |
 
@@ -31,7 +31,12 @@ Scopes eingeschränkt — das betrifft nur die Automatisierung, nicht den Ansatz
 
 ## Weg B — Cast + Sprachbefehl
 
-1. Seite im LAN erreichbar machen.
+**Cast ist LAN-only.** mDNS-Discovery plus lokale TCP-Verbindung — es gibt keine
+Cloud-API, um einem Nest Hub aus dem Internet eine URL zu schicken. Google Home kann
+das auch nicht. Ein Dauerläufer im LAN ist für Weg B daher unvermeidbar, selbst wenn
+die Seite extern gehostet ist. Er hostet nichts mehr, er löst nur noch aus.
+
+1. Gehostete URL verwenden (siehe oben).
 2. **Zuerst das hier**, das ist die einzige Stelle, die hart scheitern kann:
    ```
    pip install catt
@@ -64,8 +69,9 @@ Reload entweder `catt -d <ip> stop` davor, oder die URL mit `?v=<timestamp>` än
       Das Risiko „Cast auf 2. Gen ist fragil" hat sich **nicht** bestätigt.
 - [x] Windows-Firewall: Netz war als *Public* eingestuft. Jetzt *Private* + Regel
       „Essensplan Nest Hub" (TCP 4173, nur von der Hub-IP).
+- [x] **Hosting steht:** https://coddler123-sketch.github.io/essensplan/
+      Rein statisch, HTTPS, immer online. Kein eigener Server nötig — die Seite
+      holt das Sheet direkt im Browser. Der lokale Rechner ist raus.
 - [ ] Google Sheet veröffentlichen, URL in `index.html` eintragen
-- [ ] Server dauerhaft laufen lassen (Pi/NAS) — die Seite lädt alle 15 min nach,
-      ohne erreichbaren Server zeigt sie nach spätestens 15 min die Fehlermeldung
 - [ ] Sprachbefehl über Home Assistant (Schritt 3 oben)
 - [ ] Langzeittest: hält die Cast-Session über Stunden/Nacht?
