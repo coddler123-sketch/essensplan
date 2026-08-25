@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geräte-Check</title>
+<style>
+  body { margin:0; padding:16px; background:#14110F; color:#F5EFE7;
+         font:15px/1.5 system-ui, sans-serif; }
+  h1 { font-size:19px; margin:0 0 12px; color:#E8A33D; }
+  table { border-collapse:collapse; width:100%; margin-bottom:18px; }
+  td { padding:5px 8px; border-bottom:1px solid #332C25; vertical-align:top; }
+  td:first-child { color:#9A8F84; width:190px; }
+  b { font-size:19px; color:#E8A33D; }
+  .ja { color:#7BC96F; } .nein { color:#FF6B6B; font-weight:700; }
+  #box { height:60px; display:flex; gap:10px; }
+  #box div { flex:1; background:#E8A33D; border-radius:6px; }
+</style>
+</head>
+<body>
+<h1>Geräte-Check</h1>
+<table id="t"></table>
+<h1>Test: Flexbox mit gap</h1>
+<p style="color:#9A8F84;margin:0 0 8px">Drei gleich breite Balken mit Abstand? Dann stimmt es.</p>
+<div id="box"><div></div><div></div><div></div></div>
+
+<script>
+/* Absichtlich ES5: diese Seite muss auf jeder WebView laufen. */
+(function () {
+  function chromiumVersion() {
+    var m = /Chrome\/(\d+)/.exec(navigator.userAgent);
+    return m ? m[1] : 'unbekannt';
+  }
+  function has(ok) { return ok ? '<span class="ja">ja</span>' : '<span class="nein">NEIN</span>'; }
+  function cssOk(prop, val) { try { return CSS.supports(prop, val); } catch (e) { return false; } }
+
+  var v = parseInt(chromiumVersion(), 10);
+  var rows = [
+    ['CSS-Viewport', '<b>' + window.innerWidth + ' x ' + window.innerHeight + '</b>'],
+    ['Bildschirm (physisch)', screen.width + ' x ' + screen.height],
+    ['devicePixelRatio', '<b>' + (window.devicePixelRatio || 1) + '</b>'],
+    ['Chromium-Version', '<b>' + chromiumVersion() + '</b>'],
+    ['Ausrichtung', window.innerWidth > window.innerHeight ? 'quer' : 'hochkant'],
+    ['&nbsp;', '&nbsp;'],
+    ['replaceChildren()', has(!!Element.prototype.replaceChildren)],
+    ['ES-Module', has('noModule' in document.createElement('script'))],
+    ['fetch()', has(typeof fetch === 'function')],
+    ['CSS Grid', has(cssOk('display', 'grid'))],
+    ['gap bei Flexbox', has(cssOk('gap', '10px'))],
+    ['CSS-Variablen', has(cssOk('--x', '1'))],
+    ['Intl (de-DE Datum)', has((function () {
+      try { return new Date(2026, 7, 25).toLocaleDateString('de-DE', { weekday: 'long' }) === 'Dienstag'; }
+      catch (e) { return false; }
+    })())],
+    ['&nbsp;', '&nbsp;'],
+    ['User-Agent', '<span style="font-size:11px;word-break:break-all">' + navigator.userAgent + '</span>']
+  ];
+
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    html += '<tr><td>' + rows[i][0] + '</td><td>' + rows[i][1] + '</td></tr>';
+  }
+  document.getElementById('t').innerHTML = html;
+
+  /* Sheet-Erreichbarkeit vom Gerät aus prüfen (CORS im echten Netz). */
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td>Google Sheet erreichbar</td><td>prüfe…</td>';
+  document.getElementById('t').appendChild(tr);
+  fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSWwcvXRklzu2anHNf5uATkHS6PSk4fFnVdT6-d1xvX8eyGpDYON_SXlDjrCZSaGXgEFbQW0NIcBHMv/pub?gid=1495771387&single=true&output=csv')
+    .then(function (r) { return r.text(); })
+    .then(function (t) { tr.cells[1].innerHTML = has(t.indexOf('Datum') === 0) + ' (' + t.length + ' Zeichen)'; })
+    .catch(function (e) { tr.cells[1].innerHTML = '<span class="nein">NEIN</span> ' + e.message; });
+})();
+</script>
+</body>
+</html>
