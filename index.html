@@ -18,33 +18,26 @@
 
   /* Feste Bühne 1024x600, per JS auf den Viewport skaliert. */
   #stage { position:absolute; top:0; left:0; width:1024px; height:600px;
-           transform-origin:top left; display:flex; gap:16px; padding:28px; }
+           transform-origin:top left; display:flex; flex-direction:column; gap:14px; padding:28px; }
 
-  /* --- Links: HEUTE --- */
-  #today { flex:0 0 400px; background:var(--card-today); border-radius:22px;
-           padding:30px 32px; display:flex; flex-direction:column;
-           border-left:6px solid var(--accent); }
-  #kw { font-size:17px; font-weight:600; color:var(--accent);
-        letter-spacing:.09em; text-transform:uppercase; }
-  #today-label { margin-top:auto; font-size:15px; font-weight:600; color:var(--ink-dim);
-                 letter-spacing:.22em; text-transform:uppercase; }
-  #today-day { font-size:30px; font-weight:300; color:var(--ink-dim); margin-top:2px; }
-  #today-meal { font-size:42px; font-weight:700; line-height:1.25; margin-top:14px;
-                overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; }
-  #today-note { font-size:19px; color:var(--accent); margin-top:12px; margin-bottom:auto; }
+  #head { display:flex; align-items:baseline; gap:14px; height:52px; flex:0 0 auto; }
+  #kw { font-size:26px; font-weight:700; color:var(--accent);
+        letter-spacing:.06em; text-transform:uppercase; }
+  #range { font-size:19px; font-weight:300; color:var(--ink-dim); }
 
-  /* --- Rechts: restliche Woche --- */
-  #rest { flex:1; display:flex; flex-direction:column; gap:9px; }
-  .row { flex:1; background:var(--card); border-radius:15px; padding:0 20px;
-         display:flex; align-items:center; gap:20px; }
-  .row.past { opacity:.4; }
-  .row .day { flex:0 0 84px; font-size:17px; font-weight:600; color:var(--ink-dim);
-              letter-spacing:.04em; }
-  .row .meal { font-size:25px; font-weight:400; white-space:nowrap;
+  #days { flex:1; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .row { flex:1; background:var(--card); border-radius:14px; padding:0 22px;
+         display:flex; align-items:center; gap:22px;
+         border:3px solid transparent; }
+  .row.today { background:var(--card-today); border-color:var(--accent); }
+  .row.past { opacity:.42; }
+  .row .day { flex:0 0 168px; font-size:19px; font-weight:600; color:var(--ink-dim); }
+  .row.today .day { color:var(--accent); }
+  .row .meal { flex:1; font-size:27px; font-weight:400; white-space:nowrap;
                overflow:hidden; text-overflow:ellipsis; }
+  .row.today .meal { font-weight:600; }
   .row .meal.empty { color:var(--ink-dim); font-weight:300; }
-  .row .note { margin-left:auto; flex:0 0 auto; font-size:15px; color:var(--accent);
-               padding-left:16px; }
+  .row .note { flex:0 0 auto; font-size:16px; color:var(--accent); padding-left:18px; }
 
   #message { position:absolute; inset:28px; display:none; place-content:center; white-space:pre-line;
              text-align:center; font-size:26px; color:var(--ink-dim); }
@@ -52,14 +45,8 @@
 </head>
 <body>
 <div id="stage">
-  <div id="today">
-    <div id="kw"></div>
-    <div id="today-label">Heute</div>
-    <div id="today-day"></div>
-    <div id="today-meal"></div>
-    <div id="today-note"></div>
-  </div>
-  <div id="rest"></div>
+  <div id="head"><div id="kw"></div><div id="range"></div></div>
+  <div id="days"></div>
   <div id="message"></div>
 </div>
 
@@ -74,24 +61,18 @@ import { parseCsv, weekPlan } from './plan.js';
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWwcvXRklzu2anHNf5uATkHS6PSk4fFnVdT6-d1xvX8eyGpDYON_SXlDjrCZSaGXgEFbQW0NIcBHMv/pub?gid=1495771387&single=true&output=csv';
 
 const fmt = (d) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-const short = (d) => `${d.toLocaleDateString('de-DE', { weekday: 'short' })} · ${d.getDate()}.${d.getMonth() + 1}.`;
 
 function render(plan) {
   document.getElementById('message').style.display = 'none';
-  document.getElementById('kw').textContent =
-    `KW ${plan.week} · ${fmt(plan.from)} – ${fmt(plan.to)}`;
+  document.getElementById('kw').textContent = `KW ${plan.week}`;
+  document.getElementById('range').textContent = `${fmt(plan.from)} – ${fmt(plan.to)}`;
 
   const today = plan.days.find(d => d.isToday);
-  document.getElementById('today-day').textContent = `${today.weekday}, ${fmt(today.date)}`;
-  document.getElementById('today-meal').textContent = today.meal || 'Nichts geplant';
-  document.getElementById('today-note').textContent = today.note;
-
-  const rest = document.getElementById('rest');
-  rest.replaceChildren(...plan.days.filter(d => !d.isToday).map(d => {
+  document.getElementById('days').replaceChildren(...plan.days.map(d => {
     const row = document.createElement('div');
-    row.className = 'row' + (d.date < today.date ? ' past' : '');
-    row.innerHTML = `<div class="day"></div><div class="meal"></div><div class="note"></div>`;
-    row.children[0].textContent = short(d.date);
+    row.className = 'row' + (d.isToday ? ' today' : d.date < today.date ? ' past' : '');
+    row.innerHTML = '<div class="day"></div><div class="meal"></div><div class="note"></div>';
+    row.children[0].textContent = `${d.weekday}, ${fmt(d.date)}`;
     row.children[1].textContent = d.meal || '—';
     row.children[1].classList.toggle('empty', !d.meal);
     row.children[2].textContent = d.note;
