@@ -21,13 +21,39 @@ Keine Messung nötig, das ist eine Präferenz:
 | Interaktion | keine, statisches Bild | möglich |
 | Risiko | gering | Cast auf 2. Gen ist fragil |
 
-## Weg A — Ambient
+## Weg A — Ambient  ← gewählt
 
-Seite per Playwright zu 1024x600-PNG rendern, in ein Google-Photos-Album legen, das am
-Hub die **einzige** Bilderrahmen-Quelle ist. Album mit einem Bild = Plan steht permanent.
+**Rendering läuft.** GitHub Action `.github/workflows/render.yml`, täglich 03:00 UTC
+plus manuell auslösbar. Rendert die Live-Seite per Playwright zu 1024x600 und
+committet sie. Immer aktuell abrufbar:
 
-Notfalls reicht Hochladen von Hand, einmal pro Woche. Die Photos-API hat 2025 ihre
-Scopes eingeschränkt — das betrifft nur die Automatisierung, nicht den Ansatz.
+    https://coddler123-sketch.github.io/essensplan/essensplan.png
+
+**Täglich, nicht wöchentlich** — die Heute-Markierung wandert, deshalb muss das Bild
+jeden Tag neu entstehen.
+
+**Der Wächter in `render.mjs`** bricht ab, wenn die Seite eine Fehlermeldung zeigt
+(Sheet weg, Format kaputt). Dann bleibt die letzte gute PNG stehen, statt dass eine
+Fehlermeldung im Fotoalbum landet. Eine ehrlich leere Woche wird dagegen gerendert —
+ein veralteter Plan der Vorwoche wäre schlimmer als sichtbar kein Plan.
+
+### Offen: der Praxistest am Gerät
+
+Drei Fragen, die keine Doku beantwortet und die über den Ausbau entscheiden:
+
+1. Taucht ein Google-Photos-Album im Google-Home-Bilderrahmen als Quelle auf?
+2. Legt der Ambient-Modus Uhr und Wetter über das Bild? Wenn ja, braucht das Layout
+   eine Schutzzone an der betroffenen Kante.
+3. Wird das Bild unbeschnitten gezeigt, oder croppt der Hub?
+
+Test ohne jede API: PNG herunterladen, von Hand in ein Photos-Album legen, in der
+Google-Home-App als einzige Bilderrahmen-Quelle setzen, hinschauen.
+
+### Danach: Upload automatisieren
+
+`photoslibrary.appendonly` existiert weiterhin, Alben anlegen und Bilder hochladen ist
+per API möglich. Kostet aber Google-Cloud-Projekt, OAuth-Consent-Screen und einen
+Refresh-Token als GitHub Secret. Lohnt sich erst, wenn der Praxistest oben besteht.
 
 ## Weg B — Cast + Sprachbefehl
 
@@ -72,6 +98,9 @@ Reload entweder `catt -d <ip> stop` davor, oder die URL mit `?v=<timestamp>` än
 - [x] **Hosting steht:** https://coddler123-sketch.github.io/essensplan/
       Rein statisch, HTTPS, immer online. Kein eigener Server nötig — die Seite
       holt das Sheet direkt im Browser. Der lokale Rechner ist raus.
-- [ ] Google Sheet veröffentlichen, URL in `index.html` eintragen
-- [ ] Sprachbefehl über Home Assistant (Schritt 3 oben)
-- [ ] Langzeittest: hält die Cast-Session über Stunden/Nacht?
+- [x] Google Sheet angelegt, veröffentlicht, URL eingetragen. CORS geprüft:
+      `Access-Control-Allow-Origin: *`, kein `gviz`-Fallback nötig.
+- [x] Layout einspaltig, 7 Tage untereinander, heute nur mit Rahmen
+- [x] Leerzustand und Kopfzeilen-Prüfung (siehe `test.js`)
+- [x] **Weg A gewählt.** Tägliches Rendering läuft.
+- [ ] Praxistest am Gerät (drei Fragen oben)
