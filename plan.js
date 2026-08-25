@@ -75,3 +75,25 @@ export function weekPlan(rows, today) {
   });
   return { week: isoWeek(today), from: days[0].date, to: days[6].date, days };
 }
+
+const SPALTEN = ['datum', 'gericht', 'notiz'];
+
+/**
+ * Prüft die Kopfzeile, falls eine vorhanden ist. Gibt null zurück (alles gut)
+ * oder eine konkrete Meldung. Ohne diese Prüfung sieht ein Sheet mit
+ * vertauschten Spalten exakt so aus wie ein vergessener Wochenplan.
+ * Tolerant: Wer keine Kopfzeile hat, wird nicht behelligt.
+ */
+export function headerProblem(rows) {
+  const erste = rows[0] || [];
+  if (parseDate(erste[0])) return null;   // keine Kopfzeile, gleich Daten
+  const norm = erste.map((c) => (c || '').replace(/^﻿/, '').trim().toLowerCase());
+  for (let i = 0; i < SPALTEN.length; i++) {
+    if (i === 2 && !norm[2]) break;       // Notiz-Spalte darf fehlen
+    if (norm[i] !== SPALTEN[i]) {
+      const soll = SPALTEN[i][0].toUpperCase() + SPALTEN[i].slice(1);
+      return `Spalte ${i + 1} muss "${soll}" heißen, ist aber "${erste[i] || '(leer)'}"`;
+    }
+  }
+  return null;
+}

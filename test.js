@@ -45,4 +45,20 @@ assert.equal(p.days.filter(d => d.isToday).length, 1);
 assert.equal(p.days[2].isToday, true);
 assert.ok(!p.days.some(d => d.meal === 'Aus der Folgewoche'));
 
-console.log('ok');
+// --- Kopfzeilen-Prüfung ---
+import { headerProblem } from './plan.js';
+const H = (s) => headerProblem(parseCsv(s));
+
+assert.equal(H('Datum,Gericht,Notiz\n24.08.2026,Pizza,'), null);
+assert.equal(H('datum,gericht,notiz'), null, 'Groß/Kleinschreibung egal');
+assert.equal(H(' Datum , Gericht , Notiz '), null, 'Leerzeichen egal');
+assert.equal(H('﻿Datum,Gericht,Notiz'), null, 'BOM darf nicht stören');
+assert.equal(H('Datum,Gericht'), null, 'Notiz-Spalte darf fehlen');
+assert.equal(H('24.08.2026,Pizza,'), null, 'ganz ohne Kopfzeile ist ok');
+
+assert.match(H('Gericht,Datum,Notiz'), /Spalte 1.*Datum.*Gericht/, 'vertauscht wird erkannt');
+assert.match(H('Datum,Speise,Notiz'), /Spalte 2.*Gericht.*Speise/);
+assert.match(H('Datum,Gericht,Kommentar'), /Spalte 3.*Notiz.*Kommentar/);
+assert.match(H(''), /Spalte 1/, 'leeres Sheet wird als Formatproblem gemeldet');
+
+console.log('ok (inkl. Kopfzeilen-Prüfung)');

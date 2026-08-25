@@ -40,6 +40,11 @@
   .row .meal.empty { color:var(--ink-dim); font-weight:300; }
   .row .note { flex:0 0 auto; font-size:16px; color:var(--accent); padding-left:18px; }
 
+.empty-week { flex:1; display:grid; place-content:center; text-align:center;
+                background:var(--card); border-radius:14px; }
+  .empty-week b { display:block; font-size:38px; font-weight:600; color:var(--ink); }
+  .empty-week span { display:block; margin-top:10px; font-size:20px; color:var(--ink-dim); }
+
   #message { position:absolute; inset:28px; display:none; place-content:center; white-space:pre-line;
              text-align:center; font-size:26px; color:var(--ink-dim); }
 </style>
@@ -52,7 +57,7 @@
 </div>
 
 <script type="module">
-import { parseCsv, weekPlan } from './plan.js';
+import { parseCsv, weekPlan, headerProblem } from './plan.js';
 
 // ┌─────────────────────────────────────────────────────────────────────┐
 // │ HIER EINTRAGEN: Google Sheet -> Datei -> Freigeben -> Im Web        │
@@ -69,7 +74,20 @@ function render(plan) {
   document.getElementById('range').textContent = `${fmt(plan.from)} – ${fmt(plan.to)}`;
 
   const today = plan.days.find(d => d.isToday);
-  document.getElementById('days').replaceChildren(...plan.days.map(d => {
+  const days = document.getElementById('days');
+
+  // Kein einziger Tag gefüllt: sieben Striche sagen nichts. Klartext sagt etwas.
+  if (!plan.days.some(d => d.meal)) {
+    const leer = document.createElement('div');
+    leer.className = 'empty-week';
+    leer.innerHTML = '<b></b><span></span>';
+    leer.children[0].textContent = 'Kein Plan für diese Woche';
+    leer.children[1].textContent = 'Im Google Sheet nachtragen';
+    days.replaceChildren(leer);
+    return;
+  }
+
+  days.replaceChildren(...plan.days.map(d => {
     const row = document.createElement('div');
     row.className = 'row' + (d.isToday ? ' today' : d.date < today.date ? ' past' : '');
     row.innerHTML = '<div class="day"></div><div class="meal"></div><div class="note"></div>';
@@ -92,7 +110,11 @@ async function load() {
     // cache-bust, sonst liefert Google für Stunden die alte Fassung aus
     const res = await fetch(`${CSV_URL}&_=${Date.now()}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    render(weekPlan(parseCsv(await res.text()), new Date()));
+    const rows = parseCsv(await res.text());
+    const problem = headerProblem(rows);
+    if (problem) return showMessage(`Sheet-Format stimmt nicht
+${problem}`);
+    render(weekPlan(rows, new Date()));
   } catch (err) {
     // Blanker Bildschirm an der Küchenwand hilft niemandem.
     showMessage(`Essensplan nicht erreichbar\n${err.message}`);
