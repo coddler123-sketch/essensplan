@@ -71,7 +71,7 @@ import { parseCsv, weekPlan } from './plan.js';
 // │ veröffentlichen -> Blatt wählen -> "Kommagetrennte Werte (.csv)"    │
 // │ Sheet-Spalten: Datum | Gericht | Notiz     (Datum: 24.08.2026)      │
 // └─────────────────────────────────────────────────────────────────────┘
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/DEINE_ID/pub?gid=0&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWwcvXRklzu2anHNf5uATkHS6PSk4fFnVdT6-d1xvX8eyGpDYON_SXlDjrCZSaGXgEFbQW0NIcBHMv/pub?gid=1495771387&single=true&output=csv';
 
 const fmt = (d) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
 const short = (d) => `${d.toLocaleDateString('de-DE', { weekday: 'short' })} · ${d.getDate()}.${d.getMonth() + 1}.`;
